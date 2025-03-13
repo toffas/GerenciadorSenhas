@@ -43,6 +43,4 @@ if not login_existente:
 with open("login.json", "w", encoding="utf-8") as arquivo:
     json.dump(dados_existentes, arquivo, ensure_ascii=False, indent=4)
 
-time.sleep(5)
-
-print(f"exit")
+wait = input("Press Enter to continue.")
