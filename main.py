@@ -1,5 +1,6 @@
 import random
 import json
+import time
 
 def gerar_senha():
     password = ""
@@ -27,9 +28,9 @@ for usuario in dados_existentes:
         
         login_existente = True
         usuario["password"] = gerar_senha()
-        print(f"A senha para o login '{login}' foi atualizada.")
+        password = usuario["password"]
+        print('Login: {} e senha: {} atualizados no arquivo "login.json".'.format(login, password))
         break
-
 
 if not login_existente:
     
@@ -38,9 +39,10 @@ if not login_existente:
         "login": login,
         "password": password
     })
-    print(f"Novo login e senha para '{login}' foram adicionados.")
-
+    print('Login: {} e senha: {} salvos no arquivo "login.json".'.format(login, password))
 with open("login.json", "w", encoding="utf-8") as arquivo:
     json.dump(dados_existentes, arquivo, ensure_ascii=False, indent=4)
 
-print("Login e senha salvos no arquivo 'login.json'.")
+time.sleep(5)
+
+print(f"exit")
