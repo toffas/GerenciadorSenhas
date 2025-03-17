@@ -1,11 +1,30 @@
-import random
 import sqlite3
 import re
+import random
+from cryptography.fernet import Fernet
 
-def gerar_senha(lenpass):
-    caracteres = "AabBCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890!#$%&'()*+,-./:;<=>?@[]^_`{|}~"
-    return "".join(random.choice(caracteres) for _ in range(lenpass))
+# Gerar ou carregar a chave Fernet
+def carregar_ou_gerar_chave():
+    try:
+        with open("secret.key", "rb") as key_file:
+            key = key_file.read()
+    except FileNotFoundError:
+        key = Fernet.generate_key()
+        with open("secret.key", "wb") as key_file:
+            key_file.write(key)
+    return key
 
+key = carregar_ou_gerar_chave()
+fernet = Fernet(key)
+
+# Funções de criptografia
+def criptografar_senha(senha):
+    return fernet.encrypt(senha.encode()).decode()
+
+def descriptografar_senha(senha_criptografada):
+    return fernet.decrypt(senha_criptografada.encode()).decode()
+
+# Funções do banco de dados
 def criar_tabela():
     conexao = sqlite3.connect("logins.db")
     cursor = conexao.cursor()
@@ -29,13 +48,16 @@ def buscar_usuario(login):
     usuario = cursor.fetchone()
     
     conexao.close()
-    return usuario
+    if usuario:
+        return (usuario[0], usuario[1], descriptografar_senha(usuario[2]))
+    return None
 
 def atualizar_senha(login, nova_senha):
     conexao = sqlite3.connect("logins.db")
     cursor = conexao.cursor()
     
-    cursor.execute("UPDATE usuarios SET password = ? WHERE login = ?", (nova_senha, login))
+    nova_senha_criptografada = criptografar_senha(nova_senha)
+    cursor.execute("UPDATE usuarios SET password = ? WHERE login = ?", (nova_senha_criptografada, login))
     
     conexao.commit()
     conexao.close()
@@ -44,7 +66,8 @@ def inserir_usuario(login, senha):
     conexao = sqlite3.connect("logins.db")
     cursor = conexao.cursor()
     
-    cursor.execute("INSERT INTO usuarios (login, password) VALUES (?, ?)", (login, senha))
+    senha_criptografada = criptografar_senha(senha)
+    cursor.execute("INSERT INTO usuarios (login, password) VALUES (?, ?)", (login, senha_criptografada))
     
     conexao.commit()
     conexao.close()
@@ -57,7 +80,7 @@ def listar_usuarios():
     usuarios = cursor.fetchall()
     
     conexao.close()
-    return usuarios
+    return [(login, descriptografar_senha(senha)) for login, senha in usuarios]
 
 def remover_login_especifico(login):
     conexao = sqlite3.connect("logins.db")
@@ -69,7 +92,6 @@ def remover_login_especifico(login):
     conexao.close()
 
 def listar_logins():
-    """Lista apenas os logins armazenados no banco de dados."""
     conexao = sqlite3.connect("logins.db")
     cursor = conexao.cursor()
     
@@ -78,6 +100,10 @@ def listar_logins():
     
     conexao.close()
     return [login[0] for login in logins]
+
+def gerar_senha(lenpass):
+    caracteres = "AabBCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890!#$%&'()*+,-./:;<=>?@[]^_`{|}~"
+    return "".join(random.choice(caracteres) for _ in range(lenpass))
 
 def check_password_strength(password):
     min_password_length = 8
@@ -141,6 +167,5 @@ def evaluate_strength(score):
         return "média!"
     elif 75 <= score < 100:
         return "forte!"
-    else:
+    else: 
         return "segura!"
-
