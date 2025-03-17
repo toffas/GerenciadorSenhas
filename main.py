@@ -70,15 +70,40 @@ while True:
             print("\nEntrada inválida! Digite um número.")
 
     elif opcao == "4":
-        login = input("\nDigite o login para verificar a força da senha: ")
-        usuario = functions1.buscar_usuario(login)
+        logins = functions1.listar_logins()
+
+        if logins:
+            print("\n=== Logins Salvos ===")
+            for i, login in enumerate(logins, start=1): 
+                    print(f"{i}. {login}")
+
+        try: 
+            escolha = int(input("\nDigite o número do login para testar a senha: ")) - 1
+            
+            if 0 <= escolha < len(logins):
+                login = logins[escolha]
+                usuario = functions1.buscar_usuario(login) 
+                
+                if usuario:  
+                    senha = usuario[2]
+                    forca = functions1.check_password_strength(senha)
+                    print(f"A senha do login '{login}' é {forca}")
+                else:
+                    print("\nUsuário não encontrado!")
+
+            else:
+                print("\nNúmero inválido! Escolha um número da lista.")
+
+        except ValueError:
+            print("\nEntrada inválida! Digite um número.")
+
         
-        if usuario:
-            senha = usuario[2]
-            forca = functions1.check_password_strength(senha)
-            print(f"A senha do login '{login}' é {forca}")
-        else:
-            print("Login não encontrado.")
+        #if usuario:
+        #    senha = usuario[2]
+        #    forca = functions1.check_password_strength(senha)
+        #   print(f"A senha do login '{login}' é {forca}")
+        #else:
+        #    print("Login não encontrado.")
     
     elif opcao == "5":
         print("Exit")
